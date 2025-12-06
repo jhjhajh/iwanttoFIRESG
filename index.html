@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇸🇬 Singapore FIRE Calculator - Fixed Calculations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --color-primary: #208092;
+            --color-primary-hover: #1a6d79;
+            --color-secondary: rgba(94, 82, 64, 0.12);
+            --color-text: #134252;
+            --color-text-secondary: #626c71;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-bg: #fcfcf9;
+            --color-surface: #ffffff;
+            --color-success: #208092;
+            --color-error: #c01537;
+            --color-warning: #a84d2f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 32px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 1400px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--color-surface);
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .card h2 {
+            margin: 0 0 20px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--color-text);
+        }
+
+        .form-group .sublabel {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            margin-top: 3px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--color-text);
+            background: var(--color-surface);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(32, 128, 146, 0.1);
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin: 16px 0 10px 0;
+            padding-top: 12px;
+            border-top: 1px solid var(--color-border);
+            color: var(--color-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+            font-size: 13px;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .result-card-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-card-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 2px;
+        }
+
+        .result-card-desc {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--color-secondary);
+            color: var(--color-text);
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(94, 82, 64, 0.18);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 11px;
+            flex: none;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: none;
+            font-size: 12px;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-warning {
+            background: rgba(168, 77, 47, 0.1);
+            border: 1px solid rgba(168, 77, 47, 0.3);
+            color: var(--color-warning);
+        }
+
+        .alert-success {
+            background: rgba(32, 128, 146, 0.1);
+            border: 1px solid rgba(32, 128, 146, 0.3);
+            color: var(--color-success);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-button.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .item-row {
+            background: rgba(32, 128, 146, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border: 1px solid var(--color-border);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 50px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .item-row input {
+            font-size: 12px;
+            padding: 6px 8px;
+        }
+
+        .remove-btn {
+            background: #c01537;
+            color: white;
+            padding: 4px 8px;
+            font-size: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .remove-btn:hover {
+            background: #a01228;
+        }
+
+        .info-box {
+            background: rgba(32, 128, 146, 0.05);
+            border-left: 3px solid var(--color-primary);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🇸🇬 Singapore FIRE Calculator</h1>
+            <p class="subtitle">Savings | Investments | CPF | Cash Flow</p>
+        </header>
+
+        <div class="layout">
+            <!-- LEFT: Inputs -->
+            <div>
+                <form id="fireForm">
+                    <!-- Profile -->
+                    <div class="card">
+                        <h2>Your Profile</h2>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label>Date of Birth *</label>
+                                <input type="date" id="dob" value="2000-01-01" required>
+                                <div class="sublabel" id="calculatedAge"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>I want to FIRE at Age *</label>
+                                <input type="number" id="retirementAge" min="30" max="100" required>
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label>Life Expectancy</label>
+                                <input type="number" id="lifeExpectancy" min="50" max="120" value="90">
+                            </div>
+                            <div class="form-group">
+                                <label>Inflation Rate (% p.a.)</label>
+                                <input type="number" id="inflation" step="0.1" value="2.0">
+                                <div class="sublabel">Singapore's estimated average inflation rate is ~2.0%.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BASE LIQUID ASSETS -->
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>1. Current Liquid Assets (Today)</h2>
+                        <div class="form-group">
+                            <label>Current Savings (S$) *</label>
+                            <input type="number" id="currentSavings" min="0" required>
+                            <div class="sublabel">Cash in bank, 0% growth</div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasInvestments" onchange="updateCalculation()">
+                            <label for="hasInvestments">I have investments</label>
+                        </div>
+
+                        <div id="investmentsList" style="display: none;">
+                            <div id="investmentItems"></div>
+                            <button type="button" onclick="addInvestment()" class="btn-secondary btn-sm"
+                                style="width: 100%; margin-top: 8px;">+ Add Investment</button>
+                        </div>
+                    </div>
+
+                    <!-- MONTHLY CASH FLOW -->
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>2. Monthly Cash Flow (While Working)</h2>
+
+                        <div class="section-title">Income (Gross)</div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label>Employment Income (S$/month)</label>
+                                <input type="number" id="employmentIncome" min="0">
+                                <div class="sublabel">Gross Salary (Before CPF)</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Other Income (S$/month)</label>
+                                <input type="number" id="otherIncome" min="0">
+                                <div class="sublabel">Freelance, side business, etc.</div>
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label>Annual Salary Growth (%)</label>
+                                <input type="number" id="salaryGrowth" min="0" max="20" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>Annual Bonus (S$)</label>
+                                <input type="number" id="annualBonus" min="0">
+                            </div>
+                        </div>
+
+                        <div class="section-title">Deductions</div>
+                        <div class="row-2">
+                            <div class="form-group">
+                                <label>Monthly Expenses (S$) *</label>
+                                <input type="number" id="monthlyExpenses" min="0" required>
+                                <div class="sublabel">Rent, food, transport, etc. (Excl. Mortgage)</div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">Housing / Mortgage</div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasMortgage" onchange="updateCalculation()">
+                            <label for="hasMortgage">I have a mortgage</label>
+                        </div>
+
+                        <div id="mortgageSection"
+                            style="display: none; background: rgba(32, 128, 146, 0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border);">
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>Monthly Payment (S$)</label>
+                                    <input type="number" id="mortgagePayment" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Ends at Age</label>
+                                    <input type="number" id="mortgageEndAge" min="0" max="100">
+                                </div>
+                            </div>
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>Payment Source</label>
+                                    <select id="mortgageSource" onchange="updateCalculation()">
+                                        <option value="cash">Cash Only</option>
+                                        <option value="cpf">CPF OA Only</option>
+                                        <option value="mixed">Mixed (CPF + Cash)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="mortgageCPFPortionGroup" style="display: none;">
+                                    <label>CPF Portion (S$/mth)</label>
+                                    <input type="number" id="mortgageCPFPortion" min="0">
+                                    <div class="sublabel">Remainder paid in Cash</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">Investments</div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasMonthlyInvestments" onchange="updateCalculation()">
+                            <label for="hasMonthlyInvestments">I invest monthly</label>
+                        </div>
+                        <div id="monthlyInvestmentsSection" style="display: none;">
+                            <div id="monthlyInvestmentsList"></div>
+                            <button type="button" onclick="addMonthlyInvestment()" class="btn-secondary btn-sm"
+                                style="width: 100%; margin-top: 8px;">+ Add Monthly Investment</button>
+                        </div>
+                    </div>
+
+                    <!-- CPF -->
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>3. CPF (Automatic from Employment Income)</h2>
+                        <div class="form-group">
+                            <div class="sublabel">Rates are fully automated based on your Age (DOB).</div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="addCPFTopups" onchange="updateCalculation()">
+                            <label for="addCPFTopups">CPF Advanced Config</label>
+                        </div>
+                        <div id="cpfTopupSection"
+                            style="display: none; background: rgba(32, 128, 146, 0.03); padding: 12px; border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 10px;">
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>Cash Top-up to SA (S$/yr)</label>
+                                    <input type="number" id="saCashTopup" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cash Top-up to MA (S$/yr)</label>
+                                    <input type="number" id="maCashTopup" min="0">
+                                </div>
+                            </div>
+                            <div class="row-2">
+                                <div class="form-group">
+                                    <label>OA to SA Transfer (S$/yr)</label>
+                                    <input type="number" id="oaToSaTransfer" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Other OA Usage (Housing/Edu) (S$/mth)</label>
+                                    <input type="number" id="otherOAMonthly" min="0">
+                                    <div class="sublabel">Apart from Mortgage</div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">CPF Investment Portfolios (CPFIS)</div>
+                            <div id="cpfisList"></div>
+                            <button type="button" onclick="addCPFISPortfolio()" class="btn-secondary btn-sm"
+                                style="width: 100%; margin-top: 8px;">+ Add CPFIS Portfolio</button>
+                            <div class="sublabel" style="margin-top:5px;">Investments are deducted from respective
+                                CPF
+                                accounts monthly.</div>
+                        </div>
+
+                    </div>
+
+                    <!-- Annual Recurring Expenses -->
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>4. Annual Recurring Expenses</h2>
+                        <div class="form-group">
+                            <div class="sublabel">Note: Include estimated income tax here if desired.</div>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasAnnualExpenses" onchange="updateCalculation()">
+                            <label for="hasAnnualExpenses">I have recurring annual expenses (e.g. Travel,
+                                Insurance)</label>
+                        </div>
+                        <div id="annualExpensesSection" style="display: none;">
+                            <div id="annualExpensesList"></div>
+                            <button type="button" onclick="addAnnualExpense()" class="btn-secondary btn-sm"
+                                style="width: 100%; margin-top: 8px;">+ Add Annual Expense</button>
+                        </div>
+                        <div class="form-group" style="margin-top: 20px;">
+                            <label>CPF Life Payout Age</label>
+                            <input type="number" id="payoutAge" min="65" max="70" value="65">
+                            <div class="sublabel">Age when CPF savings are converted to monthly payouts.</div>
+                        </div>
+                    </div>
+
+                    <!-- Major Life Events -->
+                    <div class="card" style="margin-top: 16px;">
+                        <h2>5. Major One-time Purchases</h2>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasPurchases" onchange="updateCalculation()">
+                            <label for="hasPurchases">I have one-time purchases</label>
+                        </div>
+                        <div id="purchasesSection" style="display: none;">
+                            <div id="purchasesList"></div>
+                            <button type="button" onclick="addPurchase()" class="btn-secondary btn-sm"
+                                style="width: 100%; margin-top: 8px;">+ Add Purchase</button>
+                        </div>
+                    </div>
+
+                    <div class="button-group" style="margin-top: 16px;">
+                        <button type="button" class="btn-secondary" onclick="resetForm()">Reset</button>
+                        <button type="button" class="btn-secondary" onclick="clearSavedData()"
+                            style="flex: none; padding: 10px 16px; font-size: 11px;">Clear All</button>
+                        <button type="button" class="btn-primary" onclick="updateCalculation()">Calculate</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- RIGHT: Results -->
+            <div>
+                <div class="card">
+                    <h2>FIRE Analysis</h2>
+                    <div class="alert alert-warning" id="achieveAlert"></div>
+                    <div class="alert alert-success" id="successAlert"></div>
+
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-card-label">Monthly Savings Rate</div>
+                            <div class="result-card-value" id="monthlySavingsRate">S$ 0</div>
+                            <div class="result-card-desc">Current: Income - CPF - Expenses</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">Liquid at FIRE Age (No CPF)</div>
+                            <div class="result-card-value" id="liquidRetirement">S$ 0</div>
+                            <div class="result-card-desc">Savings + Investments</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">CPF at FIRE Age</div>
+                            <div class="result-card-value" id="cpfRetirement">S$ 0</div>
+                            <div class="result-card-desc">OA + SA + MA total</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">Accessible Total</div>
+                            <div class="result-card-value" id="accessibleTotal">S$ 0</div>
+                            <div class="result-card-desc">Liquid + Accessible CPF</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">Annual Expenses</div>
+                            <div class="result-card-value" id="annualExpenses">S$ 0</div>
+                            <div class="result-card-desc">At FIRE Age (inflation-adjusted)</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">FIRE Target (25x)</div>
+                            <div class="result-card-value" id="fireTarget">S$ 0</div>
+                            <div class="result-card-desc">Required for 4% withdrawal</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">Status</div>
+                            <div class="result-card-value" id="fireStatus">-</div>
+                            <div class="result-card-desc" id="fireStatusDesc"></div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-card-label">Portfolio at Age 100</div>
+                            <div class="result-card-value" id="portfolioAtEnd">S$ 0</div>
+                            <div class="result-card-desc">After withdrawals</div>
+                        </div>
+                    </div>
+
+                    <div class="info-box" id="cashFlowBox" style="display: none;"></div>
+                </div>
+
+                <div class="card" style="margin-top: 16px;">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="switchTab('portfolioTab')">Total
+                            Portfolio</button>
+                        <button class="tab-button" onclick="switchTab('liquidTab')">Liquid Cash Only</button>
+                        <button class="tab-button" onclick="switchTab('cpfTab')">CPF Accounts</button>
+                    </div>
+
+                    <div id="portfolioTab" class="tab-content active">
+                        <div class="chart-container"><canvas id="portfolioChart"></canvas></div>
+                    </div>
+
+                    <div id="liquidTab" class="tab-content">
+                        <div class="chart-container"><canvas id="liquidChart"></canvas></div>
+                    </div>
+
+                    <div id="cpfTab" class="tab-content">
+                        <div class="chart-container"><canvas id="cpfChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer
+            style="margin-top: 40px; padding: 20px; border-top: 1px solid var(--color-border); color: #666; font-size: 0.9em; line-height: 1.5;">
+            <p><strong>Disclaimer</strong></p>
+            <p>This FIRE calculator is not endorsed by CPF or any other entities and is created only for educational and
+                financial planning purposes.</p>
+            <p>The product is not intended as financial advice or as an offer or recommendation of securities or other
+                financial products.</p>
+            <p>While attempts has been made to reflect the forecast correctly according to the parameters the calculator
+                may fail to forecast the actual amount accurately for multiple reasons.</p>
+            <p>If you noticed any inaccuracies or errors, feel free to <a
+                    href="https://github.com/jhjhajh/iwanttoFIRESG" target="_blank"
+                    style="color: inherit; text-decoration: underline;">raise an issue on GitHub</a>, create a
+                discussion, or fork the repo.</p>
+        </footer>
+    </div>
+
+    <script>
+        let portfolioChartInstance = null, liquidChartInstance = null, cpfChartInstance = null;
+        let investmentIndex = 0, purchaseIndex = 0, monthlyInvIndex = 0, cpfisIndex = 0, annualExpIndex = 0;
+
+        // ... (getCPFRates and getCPFWageCeiling remain same)
+        function getCPFRates(age) {
+            if (age <= 35) return { OA: 0.23, SA: 0.06, MA: 0.08, Employee: 0.20, Total: 0.37 };
+            if (age <= 45) return { OA: 0.21, SA: 0.07, MA: 0.09, Employee: 0.20, Total: 0.37 };
+            if (age <= 50) return { OA: 0.19, SA: 0.08, MA: 0.10, Employee: 0.20, Total: 0.37 };
+            if (age <= 55) return { OA: 0.15, SA: 0.115, MA: 0.105, Employee: 0.20, Total: 0.37 };
+            if (age <= 60) return { OA: 0.12, SA: 0.035, MA: 0.105, Employee: 0.13, Total: 0.26 }; // Dropped
+            if (age <= 65) return { OA: 0.035, SA: 0.025, MA: 0.105, Employee: 0.075, Total: 0.165 };
+            if (age <= 70) return { OA: 0.01, SA: 0.01, MA: 0.105, Employee: 0.05, Total: 0.125 };
+            return { OA: 0.01, SA: 0.01, MA: 0.105, Employee: 0.05, Total: 0.125 };
+        }
+
+        // Return { ceiling: number }
+        // OW Ceiling 2024: 6800. 2025: 7400. 2026: 8000.
+        // We'll approximate using 8000 for long term projection to be simple/optimistic, or use logic.
+        // Let's use 8000 as the steady state.
+        function getCPFWageCeiling(year) {
+            return 8000;
+        }
+
+        document.getElementById('dob').addEventListener('change', function () {
+            const dob = new Date(this.value);
+            if (isNaN(dob.getTime())) return;
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            document.getElementById('calculatedAge').textContent = `Current Age: ${age}`;
+            updateCalculation();
+        });
+
+        // Helper to add monthly investments
+        function addMonthlyInvestment() {
+            monthlyInvIndex++;
+            const html = `
+                <div class="item-row" id="minv-${monthlyInvIndex}">
+                     <input type="text" placeholder="e.g. ETF DCA" class="mInvName">
+                     <input type="number" placeholder="S$/mth" class="mInvAmount" min="0">
+                     <input type="number" placeholder="Proj. Return %" class="mInvReturn" min="0" max="30" step="0.1">
+                     <button type="button" onclick="removeMonthlyInvestment(${monthlyInvIndex})" class="remove-btn">×</button>
+                </div>
+            `;
+            document.getElementById('monthlyInvestmentsList').insertAdjacentHTML('beforeend', html);
+        }
+        function removeMonthlyInvestment(id) {
+            const el = document.getElementById(`minv-${id}`);
+            if (el) el.remove();
+        }
+
+        function addInvestment() {
+            investmentIndex++;
+            const html = `
+                <div class="item-row" id="inv-${investmentIndex}">
+                    <input type="text" placeholder="e.g., CSPX" class="invName">
+                    <input type="number" placeholder="Current (S$)" class="invAmount" min="0">
+                    <input type="number" placeholder="Annual return (%)" class="invReturn" min="0" max="30" step="0.1">
+                    <button type="button" onclick="removeInvestment(${investmentIndex})" class="remove-btn">×</button>
+                </div>
+            `;
+            document.getElementById('investmentItems').insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeInvestment(id) {
+            const el = document.getElementById(`inv-${id}`);
+            if (el) el.remove();
+        }
+
+        function addPurchase() {
+            purchaseIndex++;
+            const html = `
+                <div class="item-row" id="purch-${purchaseIndex}">
+                    <input type="text" placeholder="e.g., Car" class="purchDesc">
+                    <input type="number" placeholder="Age" class="purchAge" min="0" max="120">
+                    <input type="number" placeholder="Amount (S$)" class="purchAmount" min="0">
+                    <button type="button" onclick="removePurchase(${purchaseIndex})" class="remove-btn">×</button>
+                </div>
+            `;
+            document.getElementById('purchasesList').insertAdjacentHTML('beforeend', html);
+        }
+
+        function removePurchase(id) {
+            const el = document.getElementById(`purch-${id}`);
+            if (el) el.remove();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        }
+
+        function formatCurrency(value) {
+            return 'S$ ' + Math.round(value).toLocaleString('en-SG');
+        }
+
+        document.getElementById('hasInvestments').addEventListener('change', function () {
+            document.getElementById('investmentsList').style.display = this.checked ? 'block' : 'none';
+        });
+        function addCPFISPortfolio() {
+            cpfisIndex++;
+            const html = `
+                <div class="item-row" id="cpfis-${cpfisIndex}" style="grid-template-columns: 1fr 0.8fr 0.8fr 0.6fr 40px;">
+                     <input type="text" placeholder="Name" class="cpfisName">
+                     <select class="cpfisSource">
+                        <option value="OA">OA</option>
+                        <option value="SA">SA</option>
+                     </select>
+                     <input type="number" placeholder="S$/mth" class="cpfisAmount" min="0">
+                     <input type="number" placeholder="Ret %" class="cpfisReturn" min="0" max="30" step="0.1">
+                     <button type="button" onclick="removeCPFISPortfolio(${cpfisIndex})" class="remove-btn">×</button>
+                </div>
+            `;
+            document.getElementById('cpfisList').insertAdjacentHTML('beforeend', html);
+        }
+        function removeCPFISPortfolio(id) {
+            const el = document.getElementById(`cpfis-${id}`);
+            if (el) el.remove();
+        }
+
+        function addAnnualExpense() {
+            annualExpIndex++;
+            const html = `
+                <div class="item-row" id="annExp-${annualExpIndex}" style="grid-template-columns: 1fr 0.5fr 0.5fr 0.8fr 40px;">
+                     <input type="text" placeholder="Desc" class="annExpName">
+                     <input type="number" placeholder="Start Age" class="annExpStart" min="0">
+                     <input type="number" placeholder="End Age" class="annExpEnd" min="0">
+                     <input type="number" placeholder="Amount/yr" class="annExpAmount" min="0">
+                     <button type="button" onclick="removeAnnualExpense(${annualExpIndex})" class="remove-btn">×</button>
+                </div>
+            `;
+            document.getElementById('annualExpensesList').insertAdjacentHTML('beforeend', html);
+        }
+        function removeAnnualExpense(id) {
+            const el = document.getElementById(`annExp-${id}`);
+            if (el) el.remove();
+        }
+
+        // ... (existing helper functions) ...
+
+        document.getElementById('addCPFTopups').addEventListener('change', function () {
+            document.getElementById('cpfTopupSection').style.display = this.checked ? 'block' : 'none';
+            updateCalculation();
+        });
+        document.getElementById('hasAnnualExpenses').addEventListener('change', function () {
+            document.getElementById('annualExpensesSection').style.display = this.checked ? 'block' : 'none';
+        });
+        document.getElementById('hasPurchases').addEventListener('change', function () {
+            document.getElementById('purchasesSection').style.display = this.checked ? 'block' : 'none';
+        });
+        document.getElementById('hasMonthlyInvestments').addEventListener('change', function () {
+            document.getElementById('monthlyInvestmentsSection').style.display = this.checked ? 'block' : 'none';
+        });
+        document.getElementById('hasMortgage').addEventListener('change', function () {
+            document.getElementById('mortgageSection').style.display = this.checked ? 'block' : 'none';
+            updateCalculation();
+        });
+        document.getElementById('mortgageSource').addEventListener('change', function () {
+            document.getElementById('mortgageCPFPortionGroup').style.display = (this.value === 'mixed') ? 'block' : 'none';
+            updateCalculation();
+        });
+        document.getElementById('mortgageCPFPortion').addEventListener('input', updateCalculation);
+
+
+        function updateCalculation() {
+            const dobVal = document.getElementById('dob').value;
+            // Calculate Age from DOB
+            let currentAge = 0;
+            if (dobVal) {
+                const dob = new Date(dobVal);
+                const today = new Date();
+                let age = today.getFullYear() - dob.getFullYear();
+                const m = today.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                    age--;
+                }
+                currentAge = age;
+            }
+
+            const retirementAge = parseInt(document.getElementById('retirementAge').value) || 0;
+            const lifeExpectancy = parseInt(document.getElementById('lifeExpectancy').value) || 90;
+            const inflation = (parseFloat(document.getElementById('inflation').value) || 0) / 100;
+
+            if (!currentAge || !retirementAge) return;
+
+            // INPUTS
+            const currentSavings = parseFloat(document.getElementById('currentSavings').value) || 0;
+            const employmentIncome = parseFloat(document.getElementById('employmentIncome').value) || 0;
+            const otherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
+            const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 0;
+
+            // Mortgage handling
+            const hasMortgage = document.getElementById('hasMortgage').checked;
+            const mortgagePayment = hasMortgage ? (parseFloat(document.getElementById('mortgagePayment').value) || 0) : 0;
+            const mortgageEndAge = hasMortgage ? (parseInt(document.getElementById('mortgageEndAge').value) || 100) : 0;
+            const mortgageSource = document.getElementById('mortgageSource').value;
+            const mortgageCPFPortion = hasMortgage && mortgageSource === 'mixed' ? (parseFloat(document.getElementById('mortgageCPFPortion').value) || 0) : 0;
+
+            const salaryGrowth = (parseFloat(document.getElementById('salaryGrowth').value) || 0) / 100;
+            const annualBonus = parseFloat(document.getElementById('annualBonus').value) || 0;
+
+            // ADVANCED CPF INPUTS
+            const addTopups = document.getElementById('addCPFTopups').checked;
+            const saCashTopup = addTopups ? (parseFloat(document.getElementById('saCashTopup').value) || 0) : 0;
+            const maCashTopup = addTopups ? (parseFloat(document.getElementById('maCashTopup').value) || 0) : 0;
+            const oaToSaTransfer = addTopups ? (parseFloat(document.getElementById('oaToSaTransfer').value) || 0) : 0;
+            const otherOAMonthly = addTopups ? (parseFloat(document.getElementById('otherOAMonthly').value) || 0) : 0;
+
+            // CPFIS Portfolios
+            let cpfisPortfolios = [];
+            if (addTopups) {
+                document.querySelectorAll('#cpfisList .item-row').forEach(row => {
+                    const name = row.querySelector('.cpfisName').value;
+                    const source = row.querySelector('.cpfisSource').value;
+                    const amount = parseFloat(row.querySelector('.cpfisAmount').value) || 0;
+                    const returnRate = (parseFloat(row.querySelector('.cpfisReturn').value) || 0) / 100;
+                    if (name && amount > 0) cpfisPortfolios.push({ name, source, amount, returnRate, balance: 0 });
+                });
+            }
+
+            // Annual Expenses
+            let annualRecurringExps = [];
+            if (document.getElementById('hasAnnualExpenses').checked) {
+                document.querySelectorAll('#annualExpensesList .item-row').forEach(row => {
+                    const name = row.querySelector('.annExpName').value;
+                    const start = parseInt(row.querySelector('.annExpStart').value) || 0;
+                    const end = parseInt(row.querySelector('.annExpEnd').value) || 100;
+                    const amount = parseFloat(row.querySelector('.annExpAmount').value) || 0;
+                    if (amount > 0) annualRecurringExps.push({ name, start, end, amount });
+                });
+            }
+
+            // Investments
+            let investments = [];
+            if (document.getElementById('hasInvestments').checked) {
+                document.querySelectorAll('#investmentItems .item-row').forEach(row => {
+                    const name = row.querySelector('.invName').value;
+                    const amount = parseFloat(row.querySelector('.invAmount').value) || 0;
+                    const returnRate = (parseFloat(row.querySelector('.invReturn').value) || 0) / 100;
+                    if (name && amount > 0) investments.push({ name, amount, returnRate });
+                });
+            }
+
+            // Purchases
+            let purchases = [];
+            if (document.getElementById('hasPurchases').checked) {
+                document.querySelectorAll('#purchasesList .item-row').forEach(row => {
+                    const desc = row.querySelector('.purchDesc').value;
+                    const age = parseInt(row.querySelector('.purchAge').value) || 0;
+                    const amount = parseFloat(row.querySelector('.purchAmount').value) || 0;
+                    if (desc && age > 0 && amount > 0) purchases.push({ desc, age, amount });
+                });
+            }
+
+            // Monthly Investments
+            let monthlyInvestments = [];
+            if (document.getElementById('hasMonthlyInvestments').checked) {
+                document.querySelectorAll('#monthlyInvestmentsList .item-row').forEach(row => {
+                    const name = row.querySelector('.mInvName').value;
+                    const amount = parseFloat(row.querySelector('.mInvAmount').value) || 0;
+                    const returnRate = (parseFloat(row.querySelector('.mInvReturn').value) || 0) / 100;
+                    if (name && amount > 0) monthlyInvestments.push({ name, amount, returnRate, balance: 0 });
+                });
+            }
+
+            const payoutAge = parseInt(document.getElementById('payoutAge').value) || 65;
+
+            // PROJECT FORWARD
+            let projectionData = [];
+            let savings = currentSavings;
+
+            // Investments Snapshots
+            let investmentBalances = investments.map(inv => ({ ...inv }));
+
+            // CPF
+            let cpf = { OA: 0, SA: 0, MA: 0, RA: 0 };
+            let cpfPayoutAmount = 0;
+
+            // Control flags
+            let fireSuccess = true;
+            let failureAge = null;
+            let lowestLiquid = Infinity;
+
+            const yearsToRetirement = retirementAge - currentAge;
+
+            for (let year = 0; year <= (lifeExpectancy - currentAge); year++) {
+                const age = currentAge + year;
+                const isWorking = year < yearsToRetirement;
+
+                // Track annual flows
+                let annualIncome = 0; // Cash income
+                let annualRecurringTotal = 0;
+                let mortgageCashOut = 0;
+                let mortgageCPFOut = 0;
+                let totalMonthlyInvCost = 0;
+
+                // ------------------------------------
+                // 1. WORKING YEARS LOGIC
+                // ------------------------------------
+                if (isWorking) {
+                    const empIncome = employmentIncome * Math.pow(1 + salaryGrowth, year);
+
+                    // Rates & Ceiling
+                    const rates = getCPFRates(age);
+                    const wageCeiling = getCPFWageCeiling(new Date().getFullYear() + year);
+                    const applicableWage = Math.min(empIncome, wageCeiling);
+
+                    // Monthly CPF & Net
+                    const cpfDeduction = applicableWage * rates.Employee;
+                    const netMonthly = (empIncome + otherIncome) - cpfDeduction;
+
+                    // Bonus Logic (AW Ceiling)
+                    const annualOWSubjectToCPF = applicableWage * 12;
+                    const awCeiling = 102000 - annualOWSubjectToCPF;
+                    const bonusSubjectToCPF = Math.max(0, Math.min(annualBonus, awCeiling));
+                    const bonusCPFEmployee = bonusSubjectToCPF * rates.Employee;
+                    const bonusCPFEmployer = bonusSubjectToCPF * (rates.Total - rates.Employee);
+
+                    // Cash Inflow
+                    savings += (netMonthly * 12) + (annualBonus - bonusCPFEmployee);
+
+                    // CPF Contributions
+                    cpf.OA += (applicableWage * rates.OA * 12);
+                    cpf.SA += (applicableWage * rates.SA * 12) + (addTopups ? saCashTopup : 0);
+                    cpf.MA += (applicableWage * rates.MA * 12) + (addTopups ? maCashTopup : 0);
+
+                    savings -= (addTopups ? (saCashTopup + maCashTopup) : 0); // Deduct topups from cash
+
+                    // Bonus Allocation
+                    const totalBonusCPF = bonusCPFEmployee + bonusCPFEmployer;
+                    cpf.OA += totalBonusCPF * (rates.OA / rates.Total);
+                    cpf.SA += totalBonusCPF * (rates.SA / rates.Total);
+                    cpf.MA += totalBonusCPF * (rates.MA / rates.Total);
+
+                    // OA Transfers (Standard)
+                    if (addTopups && oaToSaTransfer > 0) {
+                        if (cpf.OA >= oaToSaTransfer) {
+                            cpf.OA -= oaToSaTransfer;
+                            cpf.SA += oaToSaTransfer;
+                        } else {
+                            cpf.SA += cpf.OA;
+                            cpf.OA = 0;
+                        }
+                    }
+
+                    // Monthly Investments (Cash)
+                    for (let mInv of monthlyInvestments) {
+                        totalMonthlyInvCost += mInv.amount * 12;
+                        mInv.balance += mInv.amount * 12;
+                    }
+                    savings -= totalMonthlyInvCost;
+
+                    // CPFIS Contributions
+                    if (addTopups) {
+                        for (let p of cpfisPortfolios) {
+                            const cost = p.amount * 12;
+                            if (p.source === 'OA') {
+                                if (cpf.OA >= cost) { cpf.OA -= cost; p.balance += cost; }
+                            } else {
+                                if (cpf.SA >= cost) { cpf.SA -= cost; p.balance += cost; }
+                            }
+                        }
+                    }
+                }
+
+                // ------------------------------------
+                // 2. EXPENSES (Adjusted for Inflation)
+                // ------------------------------------
+                // Expenses apply every year (Working or Retired)
+
+                // Mortgage
+                if (hasMortgage && age < mortgageEndAge) {
+                    const annualMortgage = mortgagePayment * 12;
+                    if (mortgageSource === 'cash') {
+                        mortgageCashOut = annualMortgage;
+                    } else if (mortgageSource === 'cpf') {
+                        mortgageCPFOut = annualMortgage;
+                    } else if (mortgageSource === 'mixed') {
+                        const validCPFPart = Math.min(mortgageCPFPortion, mortgagePayment);
+                        const cpfPart = validCPFPart * 12;
+                        mortgageCPFOut = cpfPart;
+                        mortgageCashOut = Math.max(0, annualMortgage - cpfPart);
+                    }
+                }
+
+                // Recurring Annual
+                for (let exp of annualRecurringExps) {
+                    if (age >= exp.start && age <= exp.end) {
+                        annualRecurringTotal += exp.amount * Math.pow(1 + inflation, year);
+                    }
+                }
+
+                // Basic Living
+                const inflationFactor = Math.pow(1 + inflation, year);
+                let totalExpensesForYear = (monthlyExpenses * 12 * inflationFactor) + mortgageCashOut + annualRecurringTotal;
+
+                // Deduct Mortgage CPF first
+                if (mortgageCPFOut > 0) {
+                    if (cpf.OA >= mortgageCPFOut) {
+                        cpf.OA -= mortgageCPFOut;
+                    } else {
+                        const deficit = mortgageCPFOut - cpf.OA;
+                        cpf.OA = 0;
+                        totalExpensesForYear += deficit; // Pay excess from cash
+                    }
+                }
+
+                // Deduct Other OA Usage (if working, or maybe applies always? Assuming working/contribution phase)
+                if (isWorking && addTopups && otherOAMonthly > 0) {
+                    const annualOther = otherOAMonthly * 12;
+                    if (cpf.OA >= annualOther) {
+                        cpf.OA -= annualOther;
+                    } else {
+                        const deficit = annualOther - cpf.OA;
+                        cpf.OA = 0;
+                        savings -= deficit;
+                    }
+                }
+
+                // ------------------------------------
+                // 3. GROWTH & CPF PAYOUTS
+                // ------------------------------------
+
+                // Growth
+                for (let inv of investmentBalances) inv.amount *= (1 + inv.returnRate);
+                for (let mInv of monthlyInvestments) mInv.balance *= (1 + mInv.returnRate);
+                for (let p of cpfisPortfolios) p.balance *= (1 + p.returnRate);
+
+                cpf.OA *= 1.025;
+                cpf.SA *= 1.04;
+                cpf.MA *= 1.04;
+                cpf.RA *= 1.04;
+
+                // CPF LIFE TRANSITION
+                if (age === payoutAge) {
+                    // Create RA. Transfer all OA/SA.
+                    cpf.RA = cpf.SA + cpf.OA;
+                    cpf.SA = 0;
+                    cpf.OA = 0;
+
+                    // Calculate Payout (5.5% estim)
+                    cpfPayoutAmount = cpf.RA * 0.055;
+                }
+
+                // Apply Payout
+                if (age >= payoutAge) {
+                    if (cpfPayoutAmount >= totalExpensesForYear) {
+                        const surplus = cpfPayoutAmount - totalExpensesForYear;
+                        savings += surplus;
+                        totalExpensesForYear = 0;
+                    } else {
+                        totalExpensesForYear -= cpfPayoutAmount;
+                    }
+                }
+
+                // ------------------------------------
+                // 4. CASH WITHDRAWALS (Retirement)
+                // ------------------------------------
+                // Pay remaining bills
+                if (totalExpensesForYear > 0) {
+                    if (savings >= totalExpensesForYear) {
+                        savings -= totalExpensesForYear;
+                    } else {
+                        // Liquidate Assets
+                        let remaining = totalExpensesForYear - savings;
+                        savings = 0;
+
+                        // Draw from Investments
+                        for (let inv of investmentBalances) {
+                            const draw = Math.min(inv.amount, remaining);
+                            inv.amount -= draw;
+                            remaining -= draw;
+                            if (remaining <= 0.01) break;
+                        }
+
+                        // Draw from Monthly Inv
+                        if (remaining > 0.01) {
+                            for (let mInv of monthlyInvestments) {
+                                const draw = Math.min(mInv.balance, remaining);
+                                mInv.balance -= draw;
+                                remaining -= draw;
+                                if (remaining <= 0.01) break;
+                            }
+                        }
+
+                        // If still remaining, we are in debt (negative savings)
+                        if (remaining > 0.01) {
+                            savings -= remaining; // Go negative
+                        }
+                    }
+                }
+
+                // ------------------------------------
+                // 5. ONE-TIME PURCHASES
+                // ------------------------------------
+                if (document.getElementById('hasPurchases').checked) {
+                    for (let p of purchases) {
+                        if (p.age === age) {
+                            if (savings >= p.amount) {
+                                savings -= p.amount;
+                            } else {
+                                let remain = p.amount - savings;
+                                savings = 0;
+                                // Liquidate... (Standardize liquidation logic? For now simplified inline)
+                                for (let inv of investmentBalances) {
+                                    const draw = Math.min(inv.amount, remain);
+                                    inv.amount -= draw;
+                                    remain -= draw;
+                                    if (remain < 0.01) break;
+                                }
+                                if (remain > 0.01) savings -= remain;
+                            }
+                        }
+                    }
+                }
+
+                // ------------------------------------
+                // 6. METRICS & SOLVENCY
+                // ------------------------------------
+                const totalLiqInvest = investmentBalances.reduce((a, b) => a + b.amount, 0) + monthlyInvestments.reduce((a, b) => a + b.balance, 0);
+                const liquidTotal = savings + totalLiqInvest;
+
+                if (age >= retirementAge) {
+                    if (liquidTotal < 0 && fireSuccess) {
+                        fireSuccess = false;
+                        failureAge = age;
+                    }
+                    if (liquidTotal < lowestLiquid) lowestLiquid = liquidTotal;
+                }
+
+                const totalCPFIS = cpfisPortfolios.reduce((a, b) => a + b.balance, 0);
+
+                projectionData.push({
+                    age,
+                    liquid: liquidTotal,
+                    cpf: {
+                        OA: cpf.OA, SA: cpf.SA, MA: cpf.MA, RA: cpf.RA,
+                        total: cpf.OA + cpf.SA + cpf.MA + cpf.RA,
+                        totalInvested: totalCPFIS
+                    },
+                    total: liquidTotal + cpf.OA + cpf.SA + cpf.MA + cpf.RA + totalCPFIS,
+                    expenses: totalExpensesForYear // Net cash expense
+                });
+            }
+
+            // RESULTS DISPLAY
+            // Metric at Retirement Age
+            const retData = projectionData.find(d => d.age === retirementAge) || projectionData[0];
+            const endData = projectionData[projectionData.length - 1];
+
+            // UI Updates
+            document.getElementById('monthlySavingsRate').innerText = "Dynamic";
+            document.getElementById('liquidRetirement').textContent = formatCurrency(retData.liquid);
+            document.getElementById('cpfRetirement').innerText = formatCurrency(retData.cpf.total + retData.cpf.totalInvested);
+
+            const accessibleCPF = Math.max(0, retData.cpf.OA + retData.cpf.SA + retData.cpf.totalInvested - 200000); // Rough accessible check
+            const totalAccessible = retData.liquid + accessibleCPF;
+            document.getElementById('accessibleTotal').innerText = formatCurrency(totalAccessible);
+
+            // FIRE TARGET (Rule of 25 on Expense at Retirement)
+            // Just for reference
+            const expAtRet = (monthlyExpenses * 12 * Math.pow(1 + inflation, yearsToRetirement));
+            const fireTarget = expAtRet * 25;
+            document.getElementById('fireTarget').innerText = formatCurrency(fireTarget);
+            document.getElementById('annualExpenses').innerText = formatCurrency(expAtRet);
+
+            const statusEl = document.getElementById('fireStatus');
+            const descEl = document.getElementById('fireStatusDesc');
+            const successAlert = document.getElementById('successAlert');
+            const achieveAlert = document.getElementById('achieveAlert');
+
+            const canFire = totalAccessible >= fireTarget;
+
+            if (canFire && fireSuccess) {
+                statusEl.innerText = "SUCCESS (FIRE & SOLVENT)";
+                statusEl.style.color = "var(--color-success)";
+                descEl.innerText = "Cash positive until " + (currentAge + (lifeExpectancy - currentAge));
+            } else {
+                statusEl.innerText = "FAILED (SOLVENCY)";
+                statusEl.style.color = "var(--color-error)";
+                descEl.innerText = "Run out of cash at Age " + failureAge;
+            }
+
+            if (canFire && fireSuccess) {
+                successAlert.classList.add('show');
+                successAlert.innerHTML = `✓ FIRE achievable by ${retirementAge}! You'll have ${formatCurrency(totalAccessible)} (need ${formatCurrency(fireTarget)})`;
+                achieveAlert.classList.remove('show');
+            } else {
+                achieveAlert.classList.add('show');
+                let failureMsg = `⚠ Shortfall of ${formatCurrency(fireTarget - totalAccessible)} at age ${retirementAge}.`;
+                if (!fireSuccess) {
+                    failureMsg = `⚠ Insolvency at Age ${failureAge}. Liquid Assets < $0.`;
+                }
+
+                // Smart Suggestions
+                const suggestions = getSmartSuggestions(failureAge, retirementAge, currentSavings, monthlyExpenses, fireTarget, projectionData.map(d => d.liquid));
+                let suggestionHTML = "";
+                if (suggestions.length > 0) {
+                    suggestionHTML = `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.2); padding-top:8px;"><strong>💡 AI Coach Suggestions:</strong><ul style="margin-bottom:0; padding-left:20px;">`;
+                    suggestions.forEach(s => suggestionHTML += `<li>${s}</li>`);
+                    suggestionHTML += `</ul></div>`;
+                }
+
+                achieveAlert.innerHTML = failureMsg + suggestionHTML;
+                successAlert.classList.remove('show');
+            }
+
+            updateCharts(projectionData);
+        }
+
+        function getSmartSuggestions(failureAge, retirementAge, currentSavings, monthlyExpenses, fireTarget, liquidHistory) {
+            const suggestions = [];
+
+            // 1. Early Crash (Run out < 10 years after retirement)
+            if (failureAge && (failureAge - retirementAge) < 10) {
+                suggestions.push(`<strong>Premature limit:</strong> You run out of cash very quickly (${failureAge - retirementAge} years). You likely need a significantly larger cash buffer or to delay retirement by 3-5 years.`);
+            }
+
+            // 2. The Close Call (Run out > 85)
+            if (failureAge && failureAge > 85) {
+                suggestions.push(`<strong>So close!</strong> You are solvent until ${failureAge}. A small reduction in monthly expenses (e.g. $200 less) or a part-time 'Barista FIRE' job could easily bridge this final gap.`);
+            }
+
+            // 3. High Burn Rate
+            // Heuristic: If annual expenses > 4% of initial liquid?
+            // Hard to calc exact initial liquid easily here without passing it.
+            // Let's use simple logic:
+            if (monthlyExpenses > 6000) {
+                suggestions.push(`<strong>High Burn Rate:</strong> Your projected expenses ($${monthlyExpenses}/mo) are quite high. Reducing this by 15% would drastically extend your runway.`);
+            }
+
+            // 4. Savings Rate Check
+            // If savings rate < 20%?
+            // We can check the computed savings rate from UI? 
+            // Or just general advice if failure is mid-term.
+            if (failureAge && (failureAge - retirementAge) >= 10 && (failureAge - retirementAge) <= 20) {
+                suggestions.push(`<strong>Mid-Retirement Gap:</strong> You survive the initial phase but run out before CPF Life kicks in fully/enough. Consider shifting some CPF OA to SA earlier for higher returns, or doing a partial retirement.`);
+            }
+
+            // 5. CPF Payout Age interaction
+            const payoutAge = parseInt(document.getElementById('payoutAge').value) || 65;
+            if (failureAge && failureAge < payoutAge && (payoutAge - failureAge) <= 5) {
+                suggestions.push(`<strong>Bridge Problem:</strong> You run out just before CPF Payouts start at ${payoutAge}. Consider LOWERING your CPF Payout Age if possible (min 65) or keeping more cash liquid instead of investing in locked assets.`);
+            }
+
+            return suggestions;
+        }
+
+        function updateCharts(projectionData) {
+            const years = projectionData.map(d => d.age);
+            const totals = projectionData.map(d => d.total);
+            const liquids = projectionData.map(d => d.liquid);
+            const oas = projectionData.map(d => d.cpf.OA);
+            const sas = projectionData.map(d => d.cpf.SA);
+            const mas = projectionData.map(d => d.cpf.MA);
+
+            if (portfolioChartInstance) portfolioChartInstance.destroy();
+            portfolioChartInstance = new Chart(document.getElementById('portfolioChart'), {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{ label: 'Total Portfolio', data: totals, borderColor: '#208092', backgroundColor: 'rgba(32, 128, 146, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => 'S$' + (v / 1000000).toFixed(1) + 'M' } } }
+                }
+            });
+
+            if (liquidChartInstance) liquidChartInstance.destroy();
+            liquidChartInstance = new Chart(document.getElementById('liquidChart'), {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{ label: 'Liquid (Savings + Investments)', data: liquids, borderColor: '#208092', backgroundColor: 'rgba(32, 128, 146, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => 'S$' + (v / 1000000).toFixed(1) + 'M' } } }
+                }
+            });
+
+            if (cpfChartInstance) cpfChartInstance.destroy();
+            cpfChartInstance = new Chart(document.getElementById('cpfChart'), {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [
+                        { label: 'OA (2.5%)', data: oas, borderColor: '#208092', borderWidth: 2, tension: 0.4, fill: false },
+                        { label: 'SA (4%)', data: sas, borderColor: '#a84d2f', borderWidth: 2, tension: 0.4, fill: false },
+                        { label: 'MA (Locked)', data: mas, borderColor: '#d99c6c', borderWidth: 2, borderDash: [5, 5], tension: 0.4, fill: false },
+                        { label: 'CPFIS (OA+SA)', data: projectionData.map(d => d.cpf.totalInvested), borderColor: '#8e44ad', borderWidth: 2, tension: 0.4, fill: false },
+                        { label: 'FRS (Target)', data: projectionData.map(d => d.frs), borderColor: '#888', borderWidth: 1, borderDash: [2, 2], pointRadius: 0 },
+                        { label: 'BRS', data: projectionData.map(d => d.brs), borderColor: '#ccc', borderWidth: 1, borderDash: [2, 2], pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => 'S$' + (v / 1000000).toFixed(1) + 'M' } } }
+                }
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('fireForm').reset();
+            document.getElementById('investmentItems').innerHTML = '';
+            document.getElementById('purchasesList').innerHTML = '';
+            document.getElementById('monthlyInvestmentsList').innerHTML = '';
+            document.getElementById('cpfisList').innerHTML = '';
+            document.getElementById('annualExpensesList').innerHTML = '';
+            ['cpfTopupSection', 'investmentsList', 'purchasesSection', 'monthlyInvestmentsSection', 'annualExpensesSection'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        const STORAGE_KEY = 'sg_fire_correct_v1';
+
+        function saveFormData() {
+            const data = {};
+            document.querySelectorAll('#fireForm input, #fireForm select').forEach(el => {
+                data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function loadFormData() {
+            try {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                if (!data) return;
+                document.querySelectorAll('#fireForm input, #fireForm select').forEach(el => {
+                    if (data[el.id] !== undefined) {
+                        el.type === 'checkbox' ? el.checked = data[el.id] : el.value = data[el.id];
+                    }
+                });
+                updateCalculation();
+            } catch (e) { }
+        }
+
+        function clearSavedData() {
+            if (confirm('Clear all saved data and reset?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                resetForm();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('#fireForm input, #fireForm select').forEach(el => {
+                el.addEventListener('input', () => setTimeout(saveFormData, 500));
+                el.addEventListener('change', saveFormData);
+            });
+            loadFormData();
+        });
+
+        document.querySelectorAll('#fireForm input, #fireForm select').forEach(el => {
+            el.addEventListener('input', updateCalculation);
+            el.addEventListener('change', updateCalculation);
+        });
+    </script>
+</body>
+
+</html>
