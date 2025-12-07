@@ -379,10 +379,19 @@
                                 <label>Life Expectancy</label>
                                 <input type="number" id="lifeExpectancy" min="50" max="120" value="90">
                             </div>
+                        </div>
+                        <div class="row-2">
                             <div class="form-group">
                                 <label>Inflation Rate (% p.a.)</label>
                                 <input type="number" id="inflation" step="0.1" value="2.0">
                                 <div class="sublabel">Singapore's estimated average inflation rate is ~2.0%.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>CPF Life Plan</label>
+                                <select id="cpfLifePlan">
+                                    <option value="standard">Standard (Level Payouts)</option>
+                                    <option value="escalating">Escalating (Starts lower, grows 2%)</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -958,43 +967,61 @@
             };
         }
 
-        // 2. CPF Life Estimator (Linear Interpolation from 2025 data)
-        function estimateCPFLifePayout(raAmount, yearTurning65) {
-            // Baseline 2025 Cohort Payout Rules (approximate middle of range provided)
-            // BRS (106.5k) -> ~870
-            // FRS (213k) -> ~1650
-            // ERS (426k) -> ~3200
+        // 2. CPF Life Estimator
+        function estimateCPFLifePayout(raAmount, payoutAge, cohortFRS_55, planType) {
+            // 1. Project the Benchmarks to Payout Age
+            // The FRS/BRS targets are set at age 55. But by Payout Age (e.g. 65), 
+            // the RA would have grown by interest (4%). We must compare RA@65 vs FRS@55_Compounded_to_65.
 
-            // Ratios (Payout / Principal)
-            // 870 / 106500 = 0.00816
-            // 1650 / 213000 = 0.00774
-            // 3200 / 426000 = 0.00751
+            // Default to 213000 if not provided
+            const baseFRS_55 = cohortFRS_55 || 213000;
 
-            // We use a simplified linear multiplier for amounts between. 
-            // Let's settle on a conservative yield curve. 
-            // Actually, standard rule of thumb is often just ~X per 100k.
-            // Let's use the provided anchors to interpolate.
+            // 2025 Payout Anchors (Standard) - Approximate
+            let basePayoutFactor = 1.0;
 
-            // Adjust for future? Payouts "adjusted periodically".
-            // We will assume the "Value" helps hedge inflation, so we project in NOMINAL terms based on the large RA.
+            // Plan Adjustment
+            // Standard: 1.0
+            // Escalating: Starts ~20% lower, but grows. We return the *Initial* payout here.
+            if (planType === 'escalating') {
+                basePayoutFactor *= 0.80;
+            }
 
+            // Updated Anchors (Fixed 2025 values, no inflation scaling)
+            const anchorBRS_Payout = 880 * basePayoutFactor;
+            const anchorFRS_Payout = 1650 * basePayoutFactor;
+            const anchorERS_Payout = 3050 * basePayoutFactor;
+
+            // Compound the Sums to Payout Age (RA Interest ~4%)
+            // If Payout Age is 65, sum grows for 10 years.
+            const yearsGrowth = Math.max(0, payoutAge - 55);
+            const compoundFactor = Math.pow(1.04, yearsGrowth);
+
+            const targetBRS = (baseFRS_55 * 0.5) * compoundFactor;
+            const targetFRS = baseFRS_55 * compoundFactor;
+            const targetERS = (baseFRS_55 * 2.0) * compoundFactor;
+
+            // Clamp RA at ERS to prevent unrealistic extrapolation
+            raAmount = Math.min(raAmount, targetERS);
+
+            // Interpolate
             let payout = 0;
-            if (raAmount < 106500) {
-                // Below BRS: Linear up to BRS
-                payout = (raAmount / 106500) * 870;
-            } else if (raAmount < 213000) {
+            if (raAmount < targetBRS) {
+                // Below BRS
+                payout = (raAmount / targetBRS) * anchorBRS_Payout;
+            } else if (raAmount < targetFRS) {
                 // Between BRS and FRS
-                const progress = (raAmount - 106500) / (213000 - 106500);
-                payout = 870 + (progress * (1650 - 870));
+                const progress = (raAmount - targetBRS) / (targetFRS - targetBRS);
+                payout = anchorBRS_Payout + (progress * (anchorFRS_Payout - anchorBRS_Payout));
             } else {
-                // Above FRS (Linear extension to ERS and beyond)
-                const progress = (raAmount - 213000) / (426000 - 213000);
-                payout = 1650 + (progress * (3200 - 1650));
+                // Above FRS
+                const progress = (raAmount - targetFRS) / (targetERS - targetFRS);
+                payout = anchorFRS_Payout + (progress * (anchorERS_Payout - anchorFRS_Payout));
             }
 
             return Math.round(payout);
         }
 
+        // 3. Main Calculation Update
         function updateCalculation() {
             const dobVal = document.getElementById('dob').value;
             // Calculate Age from DOB
@@ -1103,6 +1130,7 @@
                 });
             }
 
+            const cpfLifePlan = document.getElementById('cpfLifePlan').value;
             const payoutAge = parseInt(document.getElementById('payoutAge').value) || 65;
             document.getElementById('cpfLifeStartAgeDisp').innerText = payoutAge;
 
@@ -1115,8 +1143,8 @@
             let projectionData = [];
             let savings = currentSavings;
             let investmentBalances = investments.map(inv => ({ ...inv }));
-            let cpf = { OA: 0, SA: 0, MA: 0, RA: 0 }; // We don't model initial CPF yet? User didn't ask for initial CPF input... Assuming 0 for "Total Profile" starts now. Wait, that's a limitation. But okay.
-            // Oh, the user has "Current Liquid Assests" but no "Current CPF". That's an existing limitation I won't fix unless asked.
+            // Includes LifePremium for Bequest tracking
+            let cpf = { OA: 0, SA: 0, MA: 0, RA: 0 };
 
             let cpfPayoutAmountMonthly = 0;
 
@@ -1129,6 +1157,8 @@
             for (let year = 0; year <= (lifeExpectancy - currentAge); year++) {
                 const age = currentAge + year;
                 const isWorking = year < yearsToRetirement;
+
+                // Start of Loop Logic
 
                 // Track annual flows
                 let totalMonthlyInvCost = 0;
@@ -1266,32 +1296,47 @@
                 cpf.RA *= 1.04;
 
                 // 6. CPF LIFE CREATION
-                // CORRECT CPF LOGIC: RA CREATED AT 55
+                // RA CREATED AT 55
                 if (age === 55) {
-                    // Transfer OA + SA to RA up to FRS/ERS?
-                    // Simplified: Move ALL OA+SA to RA.
-                    // If > ERS? Actually you can withdraw excess.
-                    // But for "Simple" FIRE calc, let's dump OA+SA into RA.
                     cpf.RA = cpf.OA + cpf.SA;
                     cpf.OA = 0;
                     cpf.SA = 0;
                 }
 
-                // CALCULATE PAYOUT (Projected based on RA at 65)
-                // If payoutAge > 55, RA grows from 55 to payoutAge.
+                // PAYOUT START & ESTIMATION
                 if (age === payoutAge) {
-                    // Calculate estimated monthly payout based on current RA
-                    cpfPayoutAmountMonthly = estimateCPFLifePayout(cpf.RA, birthYear + 65);
+                    // Calculate Payout based on RA Balance
+                    cpfPayoutAmountMonthly = estimateCPFLifePayout(cpf.RA, payoutAge, rs.FRS, cpfLifePlan);
+                }
+
+                // PAYOUT ADJUSTMENTS & DEPLETION
+                // Payouts come from RA (conceptually the "Premium").
+                // User wants RA to drop slowly.
+                if (age >= payoutAge) {
+                    // Growth on remaining RA (Interest is pooled but simplified here as RA growth)
+                    // The standard interest floor is 4%.
+                    if (cpf.RA > 0) {
+                        cpf.RA *= 1.04;
+                    }
+
+                    // Escalating Payout Logic
+                    if (cpfLifePlan === 'escalating' && age > payoutAge) {
+                        cpfPayoutAmountMonthly *= 1.02; // Increase monthly payout by 2%
+                    }
+
+                    // Deduct from RA (Depletion)
+                    const annualPayoutCost = cpfPayoutAmountMonthly * 12;
+                    cpf.RA -= annualPayoutCost;
+                    if (cpf.RA < 0) cpf.RA = 0; // Depleted, but payouts continue (Life)
                 }
 
                 // 7. PAY BILLS (OFFSET BY CPF PAYOUT)
                 let annualPayout = 0;
                 if (age >= payoutAge) {
                     annualPayout = cpfPayoutAmountMonthly * 12;
-                    // Payout can cover expenses
                     if (annualPayout >= totalCashNeed) {
                         const surplus = annualPayout - totalCashNeed;
-                        savings += surplus; // Save the rest
+                        savings += surplus; // Save surplus
                         totalCashNeed = 0;
                     } else {
                         totalCashNeed -= annualPayout;
@@ -1363,16 +1408,9 @@
 
                 const totalCPFIS = cpfisPortfolios.reduce((a, b) => a + b.balance, 0);
 
-                // Determining Target Sums for this year (For Chart)
-                // They stop growing at 55 for the individual.
                 let chartBrs = rs.BRS;
                 let chartFrs = rs.FRS;
                 let chartErs = rs.ERS;
-                // Before 55, it's the target for the *future* 55.
-                // Showing a growing line might obscure that the target is fixed to the cohort.
-                // Let's just show the Projected Value at 55 constant across the chart for clarity?
-                // "Your Cohort FRS is $400k".
-                // Okay, let's keep it constant to avoid confusion.
 
                 projectionData.push({
                     age,
@@ -1384,21 +1422,19 @@
                     },
                     total: liquidTotal + cpf.OA + cpf.SA + cpf.MA + cpf.RA + totalCPFIS,
                     payoutMonthly: cpfPayoutAmountMonthly,
-                    cohortSums: rs, // Pass through
-                    frs: chartFrs, // For chart
-                    brs: chartBrs // For chart
+                    cohortSums: rs,
+                    frs: chartFrs,
+                    brs: chartBrs
                 });
             }
 
             // RESULTS UI
             const retData = projectionData.find(d => d.age === retirementAge) || projectionData[0];
 
-            document.getElementById('monthlySavingsRate').innerText = "Dynamic";
-            document.getElementById('liquidRetirement').textContent = formatCurrency(retData.liquid);
             document.getElementById('cpfRetirement').innerText = formatCurrency(retData.cpf.total + retData.cpf.totalInvested);
 
             const accessibleCPF = Math.max(0, retData.cpf.OA + retData.cpf.SA + retData.cpf.totalInvested - 200000);
-            const totalAccessible = retData.liquid + accessibleCPF;
+            const totalAccessible = Math.max(0, retData.liquid + accessibleCPF);
             document.getElementById('accessibleTotal').innerText = formatCurrency(totalAccessible);
 
             // Expense at Retirement
@@ -1408,21 +1444,27 @@
             document.getElementById('annualExpenses').innerText = formatCurrency(expAtRet);
 
             // CPF Life Box
-            const dataAt65 = projectionData.find(d => d.age === 65);
-            if (dataAt65) {
-                // We said RA is created at 55. So at 65 it's RA balance.
-                // Wait, if payout starts at 65, we need the Pre-Deduction amount?
-                // The payout is calculated based on amount available.
-                // `cpfPayoutAmountMonthly` is stable from 65 onwards.
-                const projectedPayout = dataAt65.payoutMonthly || 0;
-                document.getElementById('estMonthlyPayout').innerText = formatCurrency(projectedPayout);
-                document.getElementById('projRA65').innerText = formatCurrency(dataAt65.cpf.RA); // RA balance at 65
-                document.getElementById('targetFRS').innerText = formatCurrency(rs.FRS);
+            const dataAtStart = projectionData.find(d => d.age === 65); // Renamed from dataAt65 to dataAtStart for clarity
+            const cohortSums = rs;
+            if (dataAtStart) {
+                // If the Payout Age > 65, the dataAtStart might not have payout yet.
+                // We should find the first year with payout.
+                const firstPayoutYear = projectionData.find(d => d.payoutMonthly > 0);
+                const projectedPayout = firstPayoutYear ? firstPayoutYear.payoutMonthly : 0;
+                const formattedPayout = formatCurrency(projectedPayout);
+
+                document.getElementById('estMonthlyPayout').textContent = `S$ ${formattedPayout}`;
+
+                // Show RA balance just before it converts? dataAtStart.cpf.RA might be 0 if payout started.
+                // Let's show the RA peak.
+                const peakRA = Math.max(...projectionData.map(d => d.cpf.RA));
+                document.getElementById('projRA65').textContent = `S$ ${(peakRA / 1000).toFixed(0)}k`;
+                document.getElementById('targetFRS').textContent = `S$ ${(cohortSums.FRS / 1000).toFixed(0)}k`;
 
                 // Color code
-                if (dataAt65.cpf.RA >= rs.FRS) {
+                if (peakRA >= cohortSums.FRS) {
                     document.getElementById('projRA65').style.color = "var(--color-success)";
-                } else if (dataAt65.cpf.RA >= rs.BRS) {
+                } else if (peakRA >= cohortSums.BRS) {
                     document.getElementById('projRA65').style.color = "var(--color-warning)";
                 } else {
                     document.getElementById('projRA65').style.color = "var(--color-error)";
@@ -1430,7 +1472,7 @@
             } else {
                 document.getElementById('estMonthlyPayout').innerText = "-";
                 document.getElementById('projRA65').innerText = "-";
-                document.getElementById('targetFRS').innerText = formatCurrency(rs.FRS); // Still show target FRS
+                document.getElementById('targetFRS').innerText = `S$ ${(cohortSums.FRS / 1000).toFixed(0)}k`;
             }
 
             // Status
@@ -1438,7 +1480,7 @@
             const descEl = document.getElementById('fireStatusDesc');
             const successAlert = document.getElementById('successAlert');
             const achieveAlert = document.getElementById('achieveAlert');
-            const canFire = totalAccessible >= fireTarget; // Roughly...
+            const canFire = totalAccessible >= fireTarget;
 
             if (canFire && fireSuccess) {
                 statusEl.innerText = "SUCCESS";
@@ -1476,50 +1518,35 @@
         }
 
         function getSmartSuggestions(failureAge, retirementAge, currentSavings, monthlyExpenses, fireTarget, liquidHistory) {
-            const suggestions = [];
-
-            // 1. Early Crash (Run out < 10 years after retirement)
+            var suggestions = [];
+            // Simplified logic to avoid syntax gremlins
             if (failureAge && (failureAge - retirementAge) < 10) {
-                suggestions.push(`<strong>Premature limit:</strong> You run out of cash very quickly (${failureAge - retirementAge} years). You likely need a significantly larger cash buffer or to delay retirement by 3-5 years.`);
+                suggestions.push("Premature limit: You run out of cash very quickly.");
             }
-
-            // 2. The Close Call (Run out > 85)
             if (failureAge && failureAge > 85) {
-                suggestions.push(`<strong>So close!</strong> You are solvent until ${failureAge}. A small reduction in monthly expenses (e.g. $200 less) or a part-time 'Barista FIRE' job could easily bridge this final gap.`);
+                suggestions.push("So close! You are solvent until " + failureAge + ".");
             }
-
-            // 3. High Burn Rate
-            // Heuristic: If annual expenses > 4% of initial liquid?
-            // Hard to calc exact initial liquid easily here without passing it.
-            // Let's use simple logic:
             if (monthlyExpenses > 6000) {
-                suggestions.push(`<strong>High Burn Rate:</strong> Your projected expenses ($${monthlyExpenses}/mo) are quite high. Reducing this by 15% would drastically extend your runway.`);
+                suggestions.push("High Burn Rate: Your projected expenses are high.");
             }
-
-            // 4. Savings Rate Check
-            // If savings rate < 20%?
-            // We can check the computed savings rate from UI? 
-            // Or just general advice if failure is mid-term.
             if (failureAge && (failureAge - retirementAge) >= 10 && (failureAge - retirementAge) <= 20) {
-                suggestions.push(`<strong>Mid-Retirement Gap:</strong> You survive the initial phase but run out before CPF Life kicks in fully/enough. Consider shifting some CPF OA to SA earlier for higher returns, or doing a partial retirement.`);
+                suggestions.push("Mid-Retirement Gap: You run out before CPF Life kicks in fully.");
             }
-
-            // 5. CPF Payout Age interaction
-            const payoutAge = parseInt(document.getElementById('payoutAge').value) || 65;
+            var payoutAge = parseInt(document.getElementById('payoutAge').value) || 65;
             if (failureAge && failureAge < payoutAge && (payoutAge - failureAge) <= 5) {
-                suggestions.push(`<strong>Bridge Problem:</strong> You run out just before CPF Payouts start at ${payoutAge}. Consider LOWERING your CPF Payout Age if possible (min 65) or keeping more cash liquid instead of investing in locked assets.`);
+                suggestions.push("Bridge Problem: You run out just before CPF Payouts start.");
             }
-
             return suggestions;
         }
 
         function updateCharts(projectionData) {
             const years = projectionData.map(d => d.age);
-            const totals = projectionData.map(d => d.total);
-            const liquids = projectionData.map(d => d.liquid);
+            const totals = projectionData.map(d => Math.max(0, d.total));
+            const liquids = projectionData.map(d => Math.max(0, d.liquid));
             const oas = projectionData.map(d => d.cpf.OA);
             const sas = projectionData.map(d => d.cpf.SA);
             const mas = projectionData.map(d => d.cpf.MA);
+            const ras = projectionData.map(d => d.cpf.RA);
 
             // Extract cohort sum constant for the chart
             // We want to draw a horizontal line or a step function?
@@ -1532,7 +1559,7 @@
                 type: 'line',
                 data: {
                     labels: years,
-                    datasets: [{ label: 'Total Portfolio', data: totals, borderColor: '#208092', backgroundColor: 'rgba(32, 128, 146, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
+                    datasets: [{ label: 'Total Portfolio (Incl. CPF Bequest)', data: totals, borderColor: '#208092', backgroundColor: 'rgba(32, 128, 146, 0.1)', borderWidth: 2, fill: true, tension: 0.4 }]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
@@ -1560,7 +1587,6 @@
             // Create constant arrays for BRS/FRS/ERS lines
             const brsLine = years.map(() => rs.BRS);
             const frsLine = years.map(() => rs.FRS);
-            const ersLine = years.map(() => rs.ERS);
 
             cpfChartInstance = new Chart(document.getElementById('cpfChart'), {
                 type: 'line',
@@ -1570,10 +1596,8 @@
                         { label: 'OA (2.5%)', data: oas, borderColor: '#208092', borderWidth: 2, tension: 0.4, fill: false },
                         { label: 'SA (4%)', data: sas, borderColor: '#a84d2f', borderWidth: 2, tension: 0.4, fill: false },
                         { label: 'MA (Locked)', data: mas, borderColor: '#d99c6c', borderWidth: 2, borderDash: [5, 5], tension: 0.4, fill: false },
-                        { label: 'RA (Life)', data: projectionData.map(d => d.cpf.RA), borderColor: '#8e44ad', borderWidth: 2, fill: true, backgroundColor: 'rgba(142, 68, 173, 0.1)' },
-                        { label: 'ERS', data: ersLine, borderColor: '#aaa', borderWidth: 1, borderDash: [2, 2], pointRadius: 0, hidden: true },
+                        { label: 'RA (Yield)', data: ras, borderColor: '#8e44ad', borderWidth: 2, fill: true, backgroundColor: 'rgba(142, 68, 173, 0.1)' },
                         { label: `FRS ($${(rs.FRS / 1000).toFixed(0)}k)`, data: frsLine, borderColor: '#666', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 },
-                        { label: 'BRS', data: brsLine, borderColor: '#ccc', borderWidth: 1, borderDash: [2, 2], pointRadius: 0, hidden: true },
                     ]
                 },
                 options: {
