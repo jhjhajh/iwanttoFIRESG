@@ -25,6 +25,10 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
@@ -348,7 +352,8 @@
     <div class="container">
         <header>
             <h1>🇸🇬 Singapore FIRE Calculator</h1>
-            <p class="subtitle">Savings | Investments | CPF | Cash Flow</p>
+            <p class="subtitle">Savings | Investments | CPF | Cash Flow | <a href="#learn-more"
+                    style="color: inherit; text-decoration: underline; cursor: pointer;">Learn More</a></p>
         </header>
 
         <div class="layout">
@@ -434,9 +439,21 @@
                         <div class="section-title">Deductions</div>
                         <div class="row-2">
                             <div class="form-group">
-                                <label>Monthly Expenses (S$) *</label>
+                                <label>Monthly Expenses (Current) *</label>
                                 <input type="number" id="monthlyExpenses" min="0" required>
                                 <div class="sublabel">Rent, food, transport, etc. (Excl. Mortgage)</div>
+                            </div>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="expenseChangeAtFire" onchange="updateCalculation()">
+                            <label for="expenseChangeAtFire">Expenses change after FIRE?</label>
+                        </div>
+                        <div id="postFireExpenseGroup"
+                            style="display:none; margin-bottom:15px; background: rgba(32, 128, 146, 0.05); padding:10px; border-radius:6px;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label>Monthly Expenses (After FIRE)</label>
+                                <input type="number" id="postFireMonthlyExpenses" min="0">
+                                <div class="sublabel">Projected in today's money (will inflate)</div>
                             </div>
                         </div>
 
@@ -607,6 +624,26 @@
                             <div class="result-card-value" id="accessibleTotal">S$ 0</div>
                             <div class="result-card-desc">Liquid + Accessible CPF</div>
                         </div>
+                        <div class="result-card"
+                            style="grid-column: span 2; background: rgba(32, 128, 146, 0.05); border-color: var(--color-primary);">
+                            <div class="result-card-label" style="color: var(--color-primary);">CPF Life Estimates (at
+                                <span id="cpfLifeStartAgeDisp">65</span>)
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                                <div>
+                                    <div style="font-size: 10px; color: #666;">Proj. RA Balance</div>
+                                    <div style="font-weight: 600; font-size: 14px;" id="projRA65">-</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 10px; color: #666;">Est. Monthly Payout</div>
+                                    <div style="font-weight: 600; font-size: 14px;" id="estMonthlyPayout">-</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 10px; color: #666;">Target FRS (Cohort)</div>
+                                    <div style="font-weight: 600; font-size: 14px;" id="targetFRS">-</div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="result-card">
                             <div class="result-card-label">Annual Expenses</div>
                             <div class="result-card-value" id="annualExpenses">S$ 0</div>
@@ -663,10 +700,59 @@
                 financial products.</p>
             <p>While attempts has been made to reflect the forecast correctly according to the parameters the calculator
                 may fail to forecast the actual amount accurately for multiple reasons.</p>
+            <p><strong>Note on Inputs:</strong> Please ensure your inputs are realistic (e.g., standard salary ranges,
+                reasonable inflation/returns). This is a simplified estimation tool; entering extreme or "funky" values
+                may break the projection model.</p>
             <p>If you noticed any inaccuracies or errors, feel free to <a
                     href="https://github.com/jhjhajh/iwanttoFIRESG" target="_blank"
                     style="color: inherit; text-decoration: underline;">raise an issue on GitHub</a>, create a
                 discussion, or fork the repo.</p>
+
+            <div id="learn-more"
+                style="margin-top: 40px; padding-top: 20px; border-top: 1px dashed var(--color-border);">
+                <h3 style="color: var(--color-text); font-size: 16px; margin-bottom: 15px;">Learn More: How this
+                    Calculator Works</h3>
+
+                <h4 style="font-size: 14px; margin: 15px 0 8px 0; color: var(--color-primary);">Purpose</h4>
+                <p>Most FIRE calculators assume you can access all your net worth at any time. In Singapore, a
+                    significant portion of our wealth (CPF) is locked until age 55 (withdrawal) or 65 (CPF Life
+                    payouts). This calculator is designed to model that reality by separating <strong>Liquid
+                        Cash</strong> from <strong>CPF</strong>.</p>
+
+                <h4 style="font-size: 14px; margin: 15px 0 8px 0; color: var(--color-primary);">The "Liquid Cash Bridge"
+                </h4>
+                <p>This is the most important concept in this calculator. To retire early (FIRE), you need enough liquid
+                    cash or accessible investments to bridge the gap between your <strong>FIRE Age</strong> and your
+                    <strong>CPF Withdrawal Age</strong>. Even if you have $1 Million in CPF, you cannot retire at 40 if
+                    you have $0 liquid cash, because you can't pay for groceries.
+                </p>
+                <div
+                    style="background: rgba(32, 128, 146, 0.05); padding: 10px; border-radius: 6px; border-left: 3px solid var(--color-primary); margin: 10px 0;">
+                    <strong>Failure Condition:</strong> This calculator marks your plan as FAILED if your Liquid Assets
+                    drop below $0 at any point, even if your total net worth is positive.
+                </div>
+
+                <h4 style="font-size: 14px; margin: 15px 0 8px 0; color: var(--color-primary);">CPF Retirement Sums &
+                    Payouts</h4>
+                <p>This calculator now projects your <strong>Retirement Sums (BRS/FRS/ERS)</strong> based on your cohort
+                    (birth year). It assumes these sums increase by <strong>3.5% per annum</strong> from the 2025
+                    baseline until you turn 55, at which point they are fixed.</p>
+                <p><strong>CPF Life Payouts</strong> are estimated using a linear interpolation of the 2025 cohort data
+                    (e.g. ~$1,650/mth for Standard Plan FRS). The projection assumes your monthly payout will help
+                    offset your expenses starting from your Payout Age (default 65).</p>
+
+                <h4 style="font-size: 14px; margin: 15px 0 8px 0; color: var(--color-primary);">Key Assumptions &
+                    Nuances</h4>
+                <ul style="padding-left: 20px; list-style-type: disc;">
+                    <li><strong>Inflation:</strong> All expenses and targets are inflation-adjusted. If you set 2%
+                        inflation, a $1000 expense today is calculated as ~$1218 in 10 years.</li>
+                    <li><strong>Expenses After FIRE:</strong> You can now specify if your monthly expenses change after
+                        you retire (e.g., lower transport costs, higher travel costs). This helps model "Lean FIRE" or
+                        "Fat FIRE" scenarios more accurately.</li>
+                    <li><strong>Withdrawal Strategy:</strong> The calculator prioritizes using Cash first. If Cash runs
+                        out, it liquidates Investments. It only touches CPF payouts when eligible.</li>
+                </ul>
+            </div>
         </footer>
     </div>
 
@@ -840,14 +926,85 @@
         document.getElementById('mortgageCPFPortion').addEventListener('input', updateCalculation);
 
 
+        document.getElementById('expenseChangeAtFire').addEventListener('change', function () {
+            document.getElementById('postFireExpenseGroup').style.display = this.checked ? 'block' : 'none';
+            updateCalculation();
+        });
+
+        // ----------------------------------------------------
+        // LOGIC HELPERS
+        // ----------------------------------------------------
+
+        // 1. Retirement Sums Projection (3.5% growth assumptions)
+        function getProjectedRetirementSums(birthYear) {
+            const yearTurning55 = birthYear + 55;
+            const baselineYear = 2025;
+            const baselineBRS = 106500;
+
+            // If already turned 55 before 2025, use historical (simplified, or just cap at 2025 level is safer/simpler for now if user is old)
+            // If turning 55 after 2025:
+            let yearsOfGrowth = Math.max(0, yearTurning55 - baselineYear);
+
+            // Rate is 3.5%
+            const growthRate = 0.035;
+
+            const projectedBRS = baselineBRS * Math.pow(1 + growthRate, yearsOfGrowth);
+
+            return {
+                BRS: projectedBRS,
+                FRS: projectedBRS * 2,
+                ERS: projectedBRS * 4,
+                yearTurning55: yearTurning55
+            };
+        }
+
+        // 2. CPF Life Estimator (Linear Interpolation from 2025 data)
+        function estimateCPFLifePayout(raAmount, yearTurning65) {
+            // Baseline 2025 Cohort Payout Rules (approximate middle of range provided)
+            // BRS (106.5k) -> ~870
+            // FRS (213k) -> ~1650
+            // ERS (426k) -> ~3200
+
+            // Ratios (Payout / Principal)
+            // 870 / 106500 = 0.00816
+            // 1650 / 213000 = 0.00774
+            // 3200 / 426000 = 0.00751
+
+            // We use a simplified linear multiplier for amounts between. 
+            // Let's settle on a conservative yield curve. 
+            // Actually, standard rule of thumb is often just ~X per 100k.
+            // Let's use the provided anchors to interpolate.
+
+            // Adjust for future? Payouts "adjusted periodically".
+            // We will assume the "Value" helps hedge inflation, so we project in NOMINAL terms based on the large RA.
+
+            let payout = 0;
+            if (raAmount < 106500) {
+                // Below BRS: Linear up to BRS
+                payout = (raAmount / 106500) * 870;
+            } else if (raAmount < 213000) {
+                // Between BRS and FRS
+                const progress = (raAmount - 106500) / (213000 - 106500);
+                payout = 870 + (progress * (1650 - 870));
+            } else {
+                // Above FRS (Linear extension to ERS and beyond)
+                const progress = (raAmount - 213000) / (426000 - 213000);
+                payout = 1650 + (progress * (3200 - 1650));
+            }
+
+            return Math.round(payout);
+        }
+
         function updateCalculation() {
             const dobVal = document.getElementById('dob').value;
             // Calculate Age from DOB
             let currentAge = 0;
+            let birthYear = 2000; // Default or placeholder
             if (dobVal) {
                 const dob = new Date(dobVal);
+                birthYear = dob.getFullYear();
                 const today = new Date();
-                let age = today.getFullYear() - dob.getFullYear();
+                let age = today.getFullYear() - birthYear;
                 const m = today.getMonth() - dob.getMonth();
                 if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
                     age--;
@@ -865,7 +1022,12 @@
             const currentSavings = parseFloat(document.getElementById('currentSavings').value) || 0;
             const employmentIncome = parseFloat(document.getElementById('employmentIncome').value) || 0;
             const otherIncome = parseFloat(document.getElementById('otherIncome').value) || 0;
-            const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 0;
+
+            // EXPENSES SWITCHING
+            const currentMonthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 0;
+            const expenseChangeAtFire = document.getElementById('expenseChangeAtFire').checked;
+            const postFireMonthlyExpensesRaw = parseFloat(document.getElementById('postFireMonthlyExpenses').value) || 0;
+            const postFireMonthlyExpenses = expenseChangeAtFire ? postFireMonthlyExpensesRaw : currentMonthlyExpenses;
 
             // Mortgage handling
             const hasMortgage = document.getElementById('hasMortgage').checked;
@@ -942,19 +1104,22 @@
             }
 
             const payoutAge = parseInt(document.getElementById('payoutAge').value) || 65;
+            document.getElementById('cpfLifeStartAgeDisp').innerText = payoutAge;
 
-            // PROJECT FORWARD
+            // ----------------------------------------
+            // PROJECT COHORT RETIREMENT SUMS
+            // ----------------------------------------
+            const rs = getProjectedRetirementSums(birthYear);
+
+            // Initialize
             let projectionData = [];
             let savings = currentSavings;
-
-            // Investments Snapshots
             let investmentBalances = investments.map(inv => ({ ...inv }));
+            let cpf = { OA: 0, SA: 0, MA: 0, RA: 0 }; // We don't model initial CPF yet? User didn't ask for initial CPF input... Assuming 0 for "Total Profile" starts now. Wait, that's a limitation. But okay.
+            // Oh, the user has "Current Liquid Assests" but no "Current CPF". That's an existing limitation I won't fix unless asked.
 
-            // CPF
-            let cpf = { OA: 0, SA: 0, MA: 0, RA: 0 };
-            let cpfPayoutAmount = 0;
+            let cpfPayoutAmountMonthly = 0;
 
-            // Control flags
             let fireSuccess = true;
             let failureAge = null;
             let lowestLiquid = Infinity;
@@ -966,51 +1131,51 @@
                 const isWorking = year < yearsToRetirement;
 
                 // Track annual flows
-                let annualIncome = 0; // Cash income
-                let annualRecurringTotal = 0;
-                let mortgageCashOut = 0;
-                let mortgageCPFOut = 0;
                 let totalMonthlyInvCost = 0;
 
-                // ------------------------------------
-                // 1. WORKING YEARS LOGIC
-                // ------------------------------------
+                // 1. DETERMINE BASE EXPENSE FOR THIS YEAR
+                // Apply switch logic
+                let baseMonthlyExp = (age < retirementAge) ? currentMonthlyExpenses : postFireMonthlyExpenses;
+
+                // Inflate
+                const inflationFactor = Math.pow(1 + inflation, year);
+                let annualLivingExp = baseMonthlyExp * 12 * inflationFactor;
+
+                // 2. WORKING INCOME & CPF
                 if (isWorking) {
                     const empIncome = employmentIncome * Math.pow(1 + salaryGrowth, year);
 
-                    // Rates & Ceiling
                     const rates = getCPFRates(age);
                     const wageCeiling = getCPFWageCeiling(new Date().getFullYear() + year);
                     const applicableWage = Math.min(empIncome, wageCeiling);
 
-                    // Monthly CPF & Net
                     const cpfDeduction = applicableWage * rates.Employee;
-                    const netMonthly = (empIncome + otherIncome) - cpfDeduction;
+                    const netMonthly = (empIncome + otherIncome) - cpfDeduction; // Cash in hand
 
-                    // Bonus Logic (AW Ceiling)
                     const annualOWSubjectToCPF = applicableWage * 12;
                     const awCeiling = 102000 - annualOWSubjectToCPF;
-                    const bonusSubjectToCPF = Math.max(0, Math.min(annualBonus, awCeiling));
+                    const bonusSubjectToCPF = Math.max(0, Math.min(annualBonus, awCeiling)); // Simplistic bonus
                     const bonusCPFEmployee = bonusSubjectToCPF * rates.Employee;
                     const bonusCPFEmployer = bonusSubjectToCPF * (rates.Total - rates.Employee);
 
-                    // Cash Inflow
+                    // Add to Cash Savings
                     savings += (netMonthly * 12) + (annualBonus - bonusCPFEmployee);
 
-                    // CPF Contributions
+                    // Add to CPF
                     cpf.OA += (applicableWage * rates.OA * 12);
                     cpf.SA += (applicableWage * rates.SA * 12) + (addTopups ? saCashTopup : 0);
                     cpf.MA += (applicableWage * rates.MA * 12) + (addTopups ? maCashTopup : 0);
 
-                    savings -= (addTopups ? (saCashTopup + maCashTopup) : 0); // Deduct topups from cash
-
-                    // Bonus Allocation
+                    // Bonus CPF
                     const totalBonusCPF = bonusCPFEmployee + bonusCPFEmployer;
                     cpf.OA += totalBonusCPF * (rates.OA / rates.Total);
                     cpf.SA += totalBonusCPF * (rates.SA / rates.Total);
                     cpf.MA += totalBonusCPF * (rates.MA / rates.Total);
 
-                    // OA Transfers (Standard)
+                    // Deduct cash topups
+                    savings -= (addTopups ? (saCashTopup + maCashTopup) : 0);
+
+                    // Transfers
                     if (addTopups && oaToSaTransfer > 0) {
                         if (cpf.OA >= oaToSaTransfer) {
                             cpf.OA -= oaToSaTransfer;
@@ -1021,14 +1186,14 @@
                         }
                     }
 
-                    // Monthly Investments (Cash)
+                    // Monthly Investments
                     for (let mInv of monthlyInvestments) {
-                        totalMonthlyInvCost += mInv.amount * 12;
-                        mInv.balance += mInv.amount * 12;
+                        totalMonthlyInvCost = mInv.amount * 12;
+                        mInv.balance += totalMonthlyInvCost;
+                        savings -= totalMonthlyInvCost;
                     }
-                    savings -= totalMonthlyInvCost;
 
-                    // CPFIS Contributions
+                    // CPFIS
                     if (addTopups) {
                         for (let p of cpfisPortfolios) {
                             const cost = p.amount * 12;
@@ -1041,12 +1206,11 @@
                     }
                 }
 
-                // ------------------------------------
-                // 2. EXPENSES (Adjusted for Inflation)
-                // ------------------------------------
-                // Expenses apply every year (Working or Retired)
+                // 3. CALCULATE TOTAL REQUIRED OUTFLOW (Living + Mortgage + Annual)
+                let mortgageCashOut = 0;
+                let mortgageCPFOut = 0;
+                let annualRecurringTotal = 0;
 
-                // Mortgage
                 if (hasMortgage && age < mortgageEndAge) {
                     const annualMortgage = mortgagePayment * 12;
                     if (mortgageSource === 'cash') {
@@ -1061,29 +1225,25 @@
                     }
                 }
 
-                // Recurring Annual
                 for (let exp of annualRecurringExps) {
                     if (age >= exp.start && age <= exp.end) {
                         annualRecurringTotal += exp.amount * Math.pow(1 + inflation, year);
                     }
                 }
 
-                // Basic Living
-                const inflationFactor = Math.pow(1 + inflation, year);
-                let totalExpensesForYear = (monthlyExpenses * 12 * inflationFactor) + mortgageCashOut + annualRecurringTotal;
+                // Total Cash Need
+                let totalCashNeed = annualLivingExp + mortgageCashOut + annualRecurringTotal;
 
-                // Deduct Mortgage CPF first
+                // 4. DEDUCT FROM CPF (Mortgage/Usage)
                 if (mortgageCPFOut > 0) {
                     if (cpf.OA >= mortgageCPFOut) {
                         cpf.OA -= mortgageCPFOut;
                     } else {
                         const deficit = mortgageCPFOut - cpf.OA;
                         cpf.OA = 0;
-                        totalExpensesForYear += deficit; // Pay excess from cash
+                        totalCashNeed += deficit; // Spillover to cash
                     }
                 }
-
-                // Deduct Other OA Usage (if working, or maybe applies always? Assuming working/contribution phase)
                 if (isWorking && addTopups && otherOAMonthly > 0) {
                     const annualOther = otherOAMonthly * 12;
                     if (cpf.OA >= annualOther) {
@@ -1091,15 +1251,11 @@
                     } else {
                         const deficit = annualOther - cpf.OA;
                         cpf.OA = 0;
-                        savings -= deficit;
+                        savings -= deficit; // Direct hit to savings (assuming you pay anyway)
                     }
                 }
 
-                // ------------------------------------
-                // 3. GROWTH & CPF PAYOUTS
-                // ------------------------------------
-
-                // Growth
+                // 5. GROWTH
                 for (let inv of investmentBalances) inv.amount *= (1 + inv.returnRate);
                 for (let mInv of monthlyInvestments) mInv.balance *= (1 + mInv.returnRate);
                 for (let p of cpfisPortfolios) p.balance *= (1 + p.returnRate);
@@ -1109,49 +1265,53 @@
                 cpf.MA *= 1.04;
                 cpf.RA *= 1.04;
 
-                // CPF LIFE TRANSITION
-                if (age === payoutAge) {
-                    // Create RA. Transfer all OA/SA.
-                    cpf.RA = cpf.SA + cpf.OA;
-                    cpf.SA = 0;
+                // 6. CPF LIFE CREATION
+                // CORRECT CPF LOGIC: RA CREATED AT 55
+                if (age === 55) {
+                    // Transfer OA + SA to RA up to FRS/ERS?
+                    // Simplified: Move ALL OA+SA to RA.
+                    // If > ERS? Actually you can withdraw excess.
+                    // But for "Simple" FIRE calc, let's dump OA+SA into RA.
+                    cpf.RA = cpf.OA + cpf.SA;
                     cpf.OA = 0;
-
-                    // Calculate Payout (5.5% estim)
-                    cpfPayoutAmount = cpf.RA * 0.055;
+                    cpf.SA = 0;
                 }
 
-                // Apply Payout
+                // CALCULATE PAYOUT (Projected based on RA at 65)
+                // If payoutAge > 55, RA grows from 55 to payoutAge.
+                if (age === payoutAge) {
+                    // Calculate estimated monthly payout based on current RA
+                    cpfPayoutAmountMonthly = estimateCPFLifePayout(cpf.RA, birthYear + 65);
+                }
+
+                // 7. PAY BILLS (OFFSET BY CPF PAYOUT)
+                let annualPayout = 0;
                 if (age >= payoutAge) {
-                    if (cpfPayoutAmount >= totalExpensesForYear) {
-                        const surplus = cpfPayoutAmount - totalExpensesForYear;
-                        savings += surplus;
-                        totalExpensesForYear = 0;
+                    annualPayout = cpfPayoutAmountMonthly * 12;
+                    // Payout can cover expenses
+                    if (annualPayout >= totalCashNeed) {
+                        const surplus = annualPayout - totalCashNeed;
+                        savings += surplus; // Save the rest
+                        totalCashNeed = 0;
                     } else {
-                        totalExpensesForYear -= cpfPayoutAmount;
+                        totalCashNeed -= annualPayout;
                     }
                 }
 
-                // ------------------------------------
-                // 4. CASH WITHDRAWALS (Retirement)
-                // ------------------------------------
-                // Pay remaining bills
-                if (totalExpensesForYear > 0) {
-                    if (savings >= totalExpensesForYear) {
-                        savings -= totalExpensesForYear;
+                // 8. DEDUCT REMAINING CASH NEED
+                if (totalCashNeed > 0) {
+                    if (savings >= totalCashNeed) {
+                        savings -= totalCashNeed;
                     } else {
-                        // Liquidate Assets
-                        let remaining = totalExpensesForYear - savings;
+                        let remaining = totalCashNeed - savings;
                         savings = 0;
-
-                        // Draw from Investments
+                        // Liquidate Inv
                         for (let inv of investmentBalances) {
                             const draw = Math.min(inv.amount, remaining);
                             inv.amount -= draw;
                             remaining -= draw;
                             if (remaining <= 0.01) break;
                         }
-
-                        // Draw from Monthly Inv
                         if (remaining > 0.01) {
                             for (let mInv of monthlyInvestments) {
                                 const draw = Math.min(mInv.balance, remaining);
@@ -1160,26 +1320,23 @@
                                 if (remaining <= 0.01) break;
                             }
                         }
-
-                        // If still remaining, we are in debt (negative savings)
-                        if (remaining > 0.01) {
-                            savings -= remaining; // Go negative
-                        }
+                        if (remaining > 0.01) savings -= remaining; // Debt
                     }
                 }
 
-                // ------------------------------------
-                // 5. ONE-TIME PURCHASES
-                // ------------------------------------
+                // 9. ONE OFF PURCHASES
                 if (document.getElementById('hasPurchases').checked) {
                     for (let p of purchases) {
                         if (p.age === age) {
-                            if (savings >= p.amount) {
-                                savings -= p.amount;
+                            // Inflation on purchase? Usually user inputs "Today's cost".
+                            // Let's assume input is Present Value -> Inflate.
+                            const inflatedCost = p.amount * Math.pow(1 + inflation, year);
+                            if (savings >= inflatedCost) {
+                                savings -= inflatedCost;
                             } else {
-                                let remain = p.amount - savings;
+                                let remain = inflatedCost - savings;
                                 savings = 0;
-                                // Liquidate... (Standardize liquidation logic? For now simplified inline)
+                                // Liquidate...
                                 for (let inv of investmentBalances) {
                                     const draw = Math.min(inv.amount, remain);
                                     inv.amount -= draw;
@@ -1192,9 +1349,7 @@
                     }
                 }
 
-                // ------------------------------------
-                // 6. METRICS & SOLVENCY
-                // ------------------------------------
+                // 10. METRICS
                 const totalLiqInvest = investmentBalances.reduce((a, b) => a + b.amount, 0) + monthlyInvestments.reduce((a, b) => a + b.balance, 0);
                 const liquidTotal = savings + totalLiqInvest;
 
@@ -1208,6 +1363,17 @@
 
                 const totalCPFIS = cpfisPortfolios.reduce((a, b) => a + b.balance, 0);
 
+                // Determining Target Sums for this year (For Chart)
+                // They stop growing at 55 for the individual.
+                let chartBrs = rs.BRS;
+                let chartFrs = rs.FRS;
+                let chartErs = rs.ERS;
+                // Before 55, it's the target for the *future* 55.
+                // Showing a growing line might obscure that the target is fixed to the cohort.
+                // Let's just show the Projected Value at 55 constant across the chart for clarity?
+                // "Your Cohort FRS is $400k".
+                // Okay, let's keep it constant to avoid confusion.
+
                 projectionData.push({
                     age,
                     liquid: liquidTotal,
@@ -1217,53 +1383,76 @@
                         totalInvested: totalCPFIS
                     },
                     total: liquidTotal + cpf.OA + cpf.SA + cpf.MA + cpf.RA + totalCPFIS,
-                    expenses: totalExpensesForYear // Net cash expense
+                    payoutMonthly: cpfPayoutAmountMonthly,
+                    cohortSums: rs, // Pass through
+                    frs: chartFrs, // For chart
+                    brs: chartBrs // For chart
                 });
             }
 
-            // RESULTS DISPLAY
-            // Metric at Retirement Age
+            // RESULTS UI
             const retData = projectionData.find(d => d.age === retirementAge) || projectionData[0];
-            const endData = projectionData[projectionData.length - 1];
 
-            // UI Updates
             document.getElementById('monthlySavingsRate').innerText = "Dynamic";
             document.getElementById('liquidRetirement').textContent = formatCurrency(retData.liquid);
             document.getElementById('cpfRetirement').innerText = formatCurrency(retData.cpf.total + retData.cpf.totalInvested);
 
-            const accessibleCPF = Math.max(0, retData.cpf.OA + retData.cpf.SA + retData.cpf.totalInvested - 200000); // Rough accessible check
+            const accessibleCPF = Math.max(0, retData.cpf.OA + retData.cpf.SA + retData.cpf.totalInvested - 200000);
             const totalAccessible = retData.liquid + accessibleCPF;
             document.getElementById('accessibleTotal').innerText = formatCurrency(totalAccessible);
 
-            // FIRE TARGET (Rule of 25 on Expense at Retirement)
-            // Just for reference
-            const expAtRet = (monthlyExpenses * 12 * Math.pow(1 + inflation, yearsToRetirement));
+            // Expense at Retirement
+            const expAtRet = (postFireMonthlyExpenses * 12 * Math.pow(1 + inflation, yearsToRetirement));
             const fireTarget = expAtRet * 25;
             document.getElementById('fireTarget').innerText = formatCurrency(fireTarget);
             document.getElementById('annualExpenses').innerText = formatCurrency(expAtRet);
 
+            // CPF Life Box
+            const dataAt65 = projectionData.find(d => d.age === 65);
+            if (dataAt65) {
+                // We said RA is created at 55. So at 65 it's RA balance.
+                // Wait, if payout starts at 65, we need the Pre-Deduction amount?
+                // The payout is calculated based on amount available.
+                // `cpfPayoutAmountMonthly` is stable from 65 onwards.
+                const projectedPayout = dataAt65.payoutMonthly || 0;
+                document.getElementById('estMonthlyPayout').innerText = formatCurrency(projectedPayout);
+                document.getElementById('projRA65').innerText = formatCurrency(dataAt65.cpf.RA); // RA balance at 65
+                document.getElementById('targetFRS').innerText = formatCurrency(rs.FRS);
+
+                // Color code
+                if (dataAt65.cpf.RA >= rs.FRS) {
+                    document.getElementById('projRA65').style.color = "var(--color-success)";
+                } else if (dataAt65.cpf.RA >= rs.BRS) {
+                    document.getElementById('projRA65').style.color = "var(--color-warning)";
+                } else {
+                    document.getElementById('projRA65').style.color = "var(--color-error)";
+                }
+            } else {
+                document.getElementById('estMonthlyPayout').innerText = "-";
+                document.getElementById('projRA65').innerText = "-";
+                document.getElementById('targetFRS').innerText = formatCurrency(rs.FRS); // Still show target FRS
+            }
+
+            // Status
             const statusEl = document.getElementById('fireStatus');
             const descEl = document.getElementById('fireStatusDesc');
             const successAlert = document.getElementById('successAlert');
             const achieveAlert = document.getElementById('achieveAlert');
-
-            const canFire = totalAccessible >= fireTarget;
+            const canFire = totalAccessible >= fireTarget; // Roughly...
 
             if (canFire && fireSuccess) {
-                statusEl.innerText = "SUCCESS (FIRE & SOLVENT)";
+                statusEl.innerText = "SUCCESS";
                 statusEl.style.color = "var(--color-success)";
-                descEl.innerText = "Cash positive until " + (currentAge + (lifeExpectancy - currentAge));
-            } else {
-                statusEl.innerText = "FAILED (SOLVENCY)";
-                statusEl.style.color = "var(--color-error)";
-                descEl.innerText = "Run out of cash at Age " + failureAge;
-            }
+                descEl.innerText = "Assets last until " + (currentAge + (lifeExpectancy - currentAge));
 
-            if (canFire && fireSuccess) {
                 successAlert.classList.add('show');
-                successAlert.innerHTML = `✓ FIRE achievable by ${retirementAge}! You'll have ${formatCurrency(totalAccessible)} (need ${formatCurrency(fireTarget)})`;
+                successAlert.innerHTML = `✓ FIRE achievable! Your plan is fully solvent.`;
                 achieveAlert.classList.remove('show');
             } else {
+                statusEl.innerText = "FAILED";
+                statusEl.style.color = "var(--color-error)";
+                descEl.innerText = failureAge ? "Runs out of cash at Age " + failureAge : "Shortfall";
+
                 achieveAlert.classList.add('show');
                 let failureMsg = `⚠ Shortfall of ${formatCurrency(fireTarget - totalAccessible)} at age ${retirementAge}.`;
                 if (!fireSuccess) {
@@ -1271,7 +1460,7 @@
                 }
 
                 // Smart Suggestions
-                const suggestions = getSmartSuggestions(failureAge, retirementAge, currentSavings, monthlyExpenses, fireTarget, projectionData.map(d => d.liquid));
+                const suggestions = getSmartSuggestions(failureAge, retirementAge, currentSavings, currentMonthlyExpenses, fireTarget, projectionData.map(d => d.liquid));
                 let suggestionHTML = "";
                 if (suggestions.length > 0) {
                     suggestionHTML = `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.2); padding-top:8px;"><strong>💡 AI Coach Suggestions:</strong><ul style="margin-bottom:0; padding-left:20px;">`;
@@ -1332,6 +1521,12 @@
             const sas = projectionData.map(d => d.cpf.SA);
             const mas = projectionData.map(d => d.cpf.MA);
 
+            // Extract cohort sum constant for the chart
+            // We want to draw a horizontal line or a step function?
+            // The value is fixed for the User. Let's draw horizontal dashed lines representing the Goal.
+            // Actually, `d.cohortSums` is the same for all years.
+            const rs = projectionData[0].cohortSums;
+
             if (portfolioChartInstance) portfolioChartInstance.destroy();
             portfolioChartInstance = new Chart(document.getElementById('portfolioChart'), {
                 type: 'line',
@@ -1361,6 +1556,12 @@
             });
 
             if (cpfChartInstance) cpfChartInstance.destroy();
+
+            // Create constant arrays for BRS/FRS/ERS lines
+            const brsLine = years.map(() => rs.BRS);
+            const frsLine = years.map(() => rs.FRS);
+            const ersLine = years.map(() => rs.ERS);
+
             cpfChartInstance = new Chart(document.getElementById('cpfChart'), {
                 type: 'line',
                 data: {
@@ -1369,9 +1570,10 @@
                         { label: 'OA (2.5%)', data: oas, borderColor: '#208092', borderWidth: 2, tension: 0.4, fill: false },
                         { label: 'SA (4%)', data: sas, borderColor: '#a84d2f', borderWidth: 2, tension: 0.4, fill: false },
                         { label: 'MA (Locked)', data: mas, borderColor: '#d99c6c', borderWidth: 2, borderDash: [5, 5], tension: 0.4, fill: false },
-                        { label: 'CPFIS (OA+SA)', data: projectionData.map(d => d.cpf.totalInvested), borderColor: '#8e44ad', borderWidth: 2, tension: 0.4, fill: false },
-                        { label: 'FRS (Target)', data: projectionData.map(d => d.frs), borderColor: '#888', borderWidth: 1, borderDash: [2, 2], pointRadius: 0 },
-                        { label: 'BRS', data: projectionData.map(d => d.brs), borderColor: '#ccc', borderWidth: 1, borderDash: [2, 2], pointRadius: 0 }
+                        { label: 'RA (Life)', data: projectionData.map(d => d.cpf.RA), borderColor: '#8e44ad', borderWidth: 2, fill: true, backgroundColor: 'rgba(142, 68, 173, 0.1)' },
+                        { label: 'ERS', data: ersLine, borderColor: '#aaa', borderWidth: 1, borderDash: [2, 2], pointRadius: 0, hidden: true },
+                        { label: `FRS ($${(rs.FRS / 1000).toFixed(0)}k)`, data: frsLine, borderColor: '#666', borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0 },
+                        { label: 'BRS', data: brsLine, borderColor: '#ccc', borderWidth: 1, borderDash: [2, 2], pointRadius: 0, hidden: true },
                     ]
                 },
                 options: {
