@@ -4,6 +4,8 @@ FIRE in SG's context
 
 Proceed with discretion, simple calculator that helps with fire estimation. Hope we all huat and retire healthy early and rich
 
+Check out the calculator here: [https://jhjhajh.github.io/iwanttoFIRESG/](https://jhjhajh.github.io/iwanttoFIRESG/)
+
 Unlike standard FIRE calculators, this tool accounts for the unique multi-stage retirement system in Singapore:
 
 1.  **Liquid Cash Bridge**: The critical period from your FIRE age until CPF payout eligibility.
