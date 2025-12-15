@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://jhjhajh.github.io/iwanttoFIRESG/sitemap.xml
+Sitemap: https://jhjhajh.github.io/iwanttoFIRESG/sitemap.txt
